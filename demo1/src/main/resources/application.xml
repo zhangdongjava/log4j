@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+
+
+       http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx.xsd">
+    <context:annotation-config/>
+    <context:property-placeholder location="classpath:redis.properties"/>
+    <context:component-scan base-package="com.zzz.log4j.service"></context:component-scan>
+    <bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property name="maxIdle" value="${redis.maxIdle}"/>
+        <property name="maxTotal" value="${redis.maxActive}"/>
+        <property name="maxWaitMillis" value="${redis.maxWait}"/>
+        <property name="testOnBorrow" value="${redis.testOnBorrow}"/>
+    </bean>
+
+    <bean id="connectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+        <property name="hostName" value="${redis.host}"></property>
+        <property name="port" value="${redis.port}"></property>
+        <property name="password" value="${redis.pass}"></property>
+        <property name="poolConfig" ref="poolConfig"></property>
+    </bean>
+
+    <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate">
+        <property name="connectionFactory" ref="connectionFactory"/>
+    </bean>
+
+
+    <import resource="mysqlPool.xml"/>
+
+    <!--&lt;!&ndash;&lt;!&ndash; MyBatis配置 SqlSessionFactoryBean &ndash;&gt;&ndash;&gt;-->
+    <bean id="sessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"></property>
+        <!--<property name="configLocation" value="classpath:mybatis.xml"></property>-->
+        <property name="mapperLocations" value="classpath:mapper/**/*.xml"></property>
+    </bean>
+
+    <!--&lt;!&ndash;   basePackage:指定sql映射文件/接口所在的包（自动扫描） &ndash;&gt;-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="sqlSessionFactoryBeanName" value="sessionFactory"></property>
+        <property name="basePackage" value="com.zzz.log4j.dao"></property>
+    </bean>
+    <!--&lt;!&ndash;&ndash;&gt;-->
+    <!--&lt;!&ndash;&ndash;&gt;-->
+    <!--&lt;!&ndash; 事务管理  DataSourceTransactionManager&ndash;&gt;-->
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+
+    <!--&lt;!&ndash; 使用声明式事务 transaction-manager：引用上面定义的事务管理器&ndash;&gt;-->
+   <tx:annotation-driven transaction-manager="txManager"></tx:annotation-driven>
+    <import resource="cache.xml"/>
+</beans>
+
+
+
+
+
+
+
+
+
+
+
+
